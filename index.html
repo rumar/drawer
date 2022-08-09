@@ -12,10 +12,15 @@
   <div>hello</div>
   <div class="controls">
     <p>
-      <button id="edit" onclick="Edit()">Toggle editing polygon</button>
+      <button id="draw">Draw polygon</button>
+      <button id="remove">Remove polygon</button>
+      <input type="file" id="file" accept="image/jpeg, image/png, image/jpg">
     </p>
   </div>
-  <canvas id="canvas" width="1000" height="600"></canvas>
+  <div class="canvas-wr">
+    <img src="" alt="" id="img" class="canvas-img">
+    <canvas id="canvas" style="border: 1px solid grey;"></canvas>
+  </div>
   <!-- <script src="./src/index.js"></script> -->
 </body>
 

@@ -4,3 +4,17 @@
   width: 100vw !important;
   height: 600px !important;
 } */
+
+.canvas-wr {
+  margin: 25px;
+  position: relative;
+}
+.canvas-img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+  z-index: -1;
+}

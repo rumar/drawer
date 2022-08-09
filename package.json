@@ -30,6 +30,7 @@
     "webpack-dev-server": "^4.9.3"
   },
   "dependencies": {
-    "fabric": "^5.2.1"
+    "fabric": "^5.2.1",
+    "uuid": "^8.3.2"
   }
 }
