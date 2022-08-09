@@ -2,8 +2,26 @@ import { v4 as uuid } from "uuid";
 
 function drawer(width = 1000, height = 600) {
   const canvas = (window._canvas = new fabric.Canvas("canvas"));
-  canvas.setWidth(width)
-  canvas.setHeight(height)
+  canvas.setWidth(width);
+  canvas.setHeight(height);
+
+  function resizeCanvas() {
+    const outerCanvasContainer = document.querySelector("#img");
+
+    const ratio = canvas.getWidth() / canvas.getHeight();
+    const containerWidth = outerCanvasContainer.clientWidth;
+    const containerHeight = outerCanvasContainer.clientHeight;
+
+    const scale = containerWidth / canvas.getWidth();
+    const zoom = canvas.getZoom() * scale;
+    canvas.setDimensions({
+      width: containerWidth,
+      height: containerHeight,
+    });
+    canvas.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+  }
+
+  window.addEventListener("resize", resizeCanvas);
 
   const drawButton = document.getElementById("draw");
   const removeButton = document.getElementById("remove");
@@ -30,9 +48,9 @@ function drawer(width = 1000, height = 600) {
     config.mode = "draw";
     console.log(canvas.getActiveObject());
   });
-  
+
   removeButton.addEventListener("click", () => {
-    canvas.remove(canvas.getActiveObject())
+    canvas.remove(canvas.getActiveObject());
   });
 
   function genetatePoly() {
@@ -88,10 +106,10 @@ function drawer(width = 1000, height = 600) {
 
     if (config.mode === "draw") {
       const circle = new fabric.Circle({
-        radius: 5,
+        radius: 5/canvas.getZoom(),
         fill: "green",
-        left: options.pointer.x,
-        top: options.pointer.y,
+        left: options.pointer.x/canvas.getZoom(),
+        top: options.pointer.y/canvas.getZoom(),
         originX: "center",
         originY: "center",
         selectable: false,
