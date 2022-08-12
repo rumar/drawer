@@ -1,9 +1,41 @@
 import { v4 as uuid } from "uuid";
 
-function drawer(width = 1000, height = 600) {
+const coordinates = [
+  [
+    {
+      x: 100,
+      y: 100,
+    },
+    {
+      x: 200,
+      y: 200,
+    },
+    {
+      x: 100,
+      y: 300,
+    },
+  ],
+  [
+    {
+      x: 500,
+      y: 300,
+    },
+    {
+      x: 700,
+      y: 400,
+    },
+    {
+      x: 400,
+      y: 300,
+    },
+  ],
+];
+
+function drawer({ width = 1000, height = 560 } = {}) {
   const canvas = (window._canvas = new fabric.Canvas("canvas"));
   canvas.setWidth(width);
   canvas.setHeight(height);
+  initPolygons();
 
   function resizeCanvas() {
     const outerCanvasContainer = document.querySelector("#img");
@@ -31,7 +63,7 @@ function drawer(width = 1000, height = 600) {
      * @type String
      * @value "edit" | "draw"
      */
-    mode: "draw",
+    mode: "edit",
     /**
      * @type Array
      * @value {new fabric.Circle}[]
@@ -52,6 +84,38 @@ function drawer(width = 1000, height = 600) {
   removeButton.addEventListener("click", () => {
     canvas.remove(canvas.getActiveObject());
   });
+
+  function initPolygons() {
+    if (!coordinates || !coordinates.length) return;
+
+    coordinates.forEach((coord) => {
+      const polygon = new fabric.Polygon(coord, {
+        fill: "rgba(0,0,360,.5)",
+        strokeWidth: 1,
+        stroke: "black",
+        objectCaching: false,
+        transparentCorners: false,
+        cornerSize: 10,
+        cornerStyle: "circle",
+        perPixelTargetFind: true,
+        controls: coord.reduce(function (acc, point, index) {
+          var lastControl = coord.length - 1;
+          acc["p" + index] = new fabric.Control({
+            positionHandler: polygonPositionHandler,
+            actionHandler: anchorWrapper(
+              index > 0 ? index - 1 : lastControl,
+              actionHandler
+            ),
+            actionName: "modifyPolygon",
+            pointIndex: index,
+          });
+          return acc;
+        }, {}),
+        hasBorders: false,
+      });
+      canvas.add(polygon);
+    });
+  }
 
   function genetatePoly() {
     const points = config.drawingPoints.map((circle) => ({
@@ -106,10 +170,10 @@ function drawer(width = 1000, height = 600) {
 
     if (config.mode === "draw") {
       const circle = new fabric.Circle({
-        radius: 5/canvas.getZoom(),
+        radius: 5 / canvas.getZoom(),
         fill: "green",
-        left: options.pointer.x/canvas.getZoom(),
-        top: options.pointer.y/canvas.getZoom(),
+        left: options.pointer.x / canvas.getZoom(),
+        top: options.pointer.y / canvas.getZoom(),
         originX: "center",
         originY: "center",
         selectable: false,
@@ -242,6 +306,13 @@ function drawer(width = 1000, height = 600) {
       };
     polygon.points[currentControl.pointIndex] = finalPointPosition;
     return true;
+  }
+
+  return {
+    getData() {
+      const res = canvas.getObjects('polygon').map(item => (item.points))
+      console.log(res);
+    }
   }
 }
 

@@ -10,9 +10,17 @@ file.addEventListener("change", function () {
     const uploaded_image = reader.result;
     img.src = uploaded_image;
     img.addEventListener("load", () => {
-      console.log(img.clientWidth, img.clientHeight);
-      drawer(img.clientWidth, img.clientHeight);
+      console.log({ width: img.clientWidth, height: img.clientHeight });
+      const draw = drawer({ width: img.clientWidth, height: img.clientHeight });
+      setTimeout(() => {
+        draw.getData();
+      }, 2000);
     });
   });
   reader.readAsDataURL(this.files[0]);
 });
+
+// const draw = drawer({ width: 1000, height: 600 });
+// setTimeout(() => {
+//   draw.getData();
+// }, 2000);
