@@ -1,62 +1,18 @@
 import { v4 as uuid } from "uuid";
+import coordinates from "./faker/coordinates";
 
-const coordinates = [
-  [
-    {
-      x: 100,
-      y: 100,
-    },
-    {
-      x: 200,
-      y: 200,
-    },
-    {
-      x: 100,
-      y: 300,
-    },
-  ],
-  [
-    {
-      x: 500,
-      y: 300,
-    },
-    {
-      x: 700,
-      y: 400,
-    },
-    {
-      x: 400,
-      y: 300,
-    },
-  ],
-];
-
-function drawer({ width = 1000, height = 560 } = {}) {
-  const canvas = (window._canvas = new fabric.Canvas("canvas"));
-  canvas.setWidth(width);
-  canvas.setHeight(height);
-  initPolygons();
-
-  function resizeCanvas() {
-    const outerCanvasContainer = document.querySelector("#img");
-
-    const ratio = canvas.getWidth() / canvas.getHeight();
-    const containerWidth = outerCanvasContainer.clientWidth;
-    const containerHeight = outerCanvasContainer.clientHeight;
-
-    const scale = containerWidth / canvas.getWidth();
-    const zoom = canvas.getZoom() * scale;
-    canvas.setDimensions({
-      width: containerWidth,
-      height: containerHeight,
-    });
-    canvas.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
-  }
-
-  window.addEventListener("resize", resizeCanvas);
-
-  const drawButton = document.getElementById("draw");
-  const removeButton = document.getElementById("remove");
+function drawer({
+  width = 1000,
+  height = 562,
+  colors = {
+    main: "rgba(224, 7, 49, 0.5)",
+    hover: "rgba(20, 152, 8, 0.5)",
+  },
+  isAdmin = false,
+} = {}) {
+  let canvas = null;
+  let drawButton = null;
+  let removeButton = null;
 
   let config = {
     /**
@@ -76,6 +32,55 @@ function drawer({ width = 1000, height = 560 } = {}) {
     drawingLines: [],
   };
 
+  initCanvas();
+
+  function initCanvas() {
+    const wrapper = document.querySelector(".drawer .canvas-wr");
+    const canvasElement = document.createElement("canvas");
+
+    wrapper.appendChild(canvasElement);
+    canvas = window._canvas = new fabric.Canvas(canvasElement);
+    canvas.setWidth(width);
+    canvas.setHeight(height);
+    initPolygons();
+    createButtons();
+    resizeCanvas();
+
+    window.addEventListener("resize", resizeCanvas);
+  }
+
+  function createButtons() {
+    drawButton = document.createElement("button");
+    drawButton.type = "button";
+    drawButton.innerHTML = "Add polygon";
+
+    removeButton = document.createElement("button");
+    removeButton.innerHTML = "Remove polygon";
+    removeButton.type = "button";
+
+    document.querySelector(".drawer .controls").appendChild(drawButton);
+    document.querySelector(".drawer .controls").appendChild(removeButton);
+    document
+      .querySelector(".drawer .controls")
+      .querySelector("input[type=file]").style.display = "none";
+  }
+
+  function resizeCanvas() {
+    const outerCanvasContainer = document.querySelector("#img");
+
+    const ratio = canvas.getWidth() / canvas.getHeight();
+    const containerWidth = outerCanvasContainer.clientWidth;
+    const containerHeight = outerCanvasContainer.clientHeight;
+
+    const scale = containerWidth / canvas.getWidth();
+    const zoom = canvas.getZoom() * scale;
+    canvas.setDimensions({
+      width: containerWidth,
+      height: containerHeight,
+    });
+    canvas.setViewportTransform([zoom, 0, 0, zoom, 0, 0]);
+  }
+
   drawButton.addEventListener("click", () => {
     config.mode = "draw";
     console.log(canvas.getActiveObject());
@@ -88,64 +93,96 @@ function drawer({ width = 1000, height = 560 } = {}) {
   function initPolygons() {
     if (!coordinates || !coordinates.length) return;
 
-    coordinates.forEach((coord) => {
-      const polygon = new fabric.Polygon(coord, {
-        fill: "rgba(0,0,360,.5)",
-        strokeWidth: 1,
-        stroke: "black",
-        objectCaching: false,
-        transparentCorners: false,
-        cornerSize: 10,
-        cornerStyle: "circle",
-        perPixelTargetFind: true,
-        controls: coord.reduce(function (acc, point, index) {
-          var lastControl = coord.length - 1;
-          acc["p" + index] = new fabric.Control({
-            positionHandler: polygonPositionHandler,
-            actionHandler: anchorWrapper(
-              index > 0 ? index - 1 : lastControl,
-              actionHandler
-            ),
-            actionName: "modifyPolygon",
-            pointIndex: index,
-          });
-          return acc;
-        }, {}),
-        hasBorders: false,
-      });
+    coordinates.forEach((points) => {
+      const polygon = createPolygon(points);
       canvas.add(polygon);
     });
   }
 
-  function genetatePoly() {
-    const points = config.drawingPoints.map((circle) => ({
-      x: circle.left,
-      y: circle.top,
-    }));
-    const polygon = new fabric.Polygon(points, {
-      fill: "rgba(0,0,360,.5)",
+  /**
+   *
+   * @param {array} points - [{x, y}] array of objects with coordinates
+   * @returns new fabric.Polygon object
+   */
+  function createPolygon(points) {
+    return new fabric.Polygon(points, {
+      fill: colors.main,
       strokeWidth: 1,
-      stroke: "black",
+      stroke: colors.main,
       objectCaching: false,
       transparentCorners: false,
       cornerSize: 10,
       cornerStyle: "circle",
+      cornerColor: "blue",
       perPixelTargetFind: true,
-      controls: points.reduce(function (acc, point, index) {
-        var lastControl = points.length - 1;
-        acc["p" + index] = new fabric.Control({
-          positionHandler: polygonPositionHandler,
-          actionHandler: anchorWrapper(
-            index > 0 ? index - 1 : lastControl,
-            actionHandler
-          ),
-          actionName: "modifyPolygon",
-          pointIndex: index,
-        });
-        return acc;
-      }, {}),
+      lockMovementX: !isAdmin,
+      lockMovementY: !isAdmin,
+      controls: !isAdmin
+        ? false
+        : points.reduce(function (acc, point, index) {
+            var lastControl = points.length - 1;
+            acc["p" + index] = new fabric.Control({
+              positionHandler: polygonPositionHandler,
+              actionHandler: anchorWrapper(
+                index > 0 ? index - 1 : lastControl,
+                actionHandler
+              ),
+              actionName: "modifyPolygon",
+              pointIndex: index,
+            });
+            return acc;
+          }, {}),
       hasBorders: false,
     });
+  }
+
+  /**
+   *
+   * @param {number} x - coordinate on x-axis
+   * @param {number} y - coordinate on y-axis
+   * @returns new fabric.Circle object
+   */
+  function createCircle(x, y) {
+    return new fabric.Circle({
+      radius: 5 / canvas.getZoom(),
+      fill: "blue",
+      left: x / canvas.getZoom(),
+      top: y / canvas.getZoom(),
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      hasControls: false,
+      selectable: false,
+      uuid: uuid(),
+    });
+  }
+
+  /**
+   *
+   * @param {array} points - [x1, y1, x2, y2]
+   * @returns new fabric.Line object
+   */
+  function createLine(points) {
+    return new fabric.Line(points, {
+      strokeWidth: 1,
+      fill: "#999999",
+      stroke: "#999999",
+      class: "line",
+      originX: "center",
+      originY: "center",
+      selectable: false,
+      // hasBorders: false,
+      hasControls: false,
+      evented: false,
+    });
+  }
+
+  function closePolygonPath() {
+    const points = config.drawingPoints.map((circle) => ({
+      x: circle.left,
+      y: circle.top,
+    }));
+    const polygon = createPolygon(points);
     config.drawingPoints.forEach((circle) => {
       canvas.remove(circle);
     });
@@ -157,30 +194,26 @@ function drawer({ width = 1000, height = 560 } = {}) {
     canvas.add(polygon);
   }
 
+  function selectObjectHandler(options) {
+    console.log(options);
+  }
+
+  canvas.on("selection:created", selectObjectHandler);
+  canvas.on("selection:updated", selectObjectHandler);
+
   canvas.on("mouse:down", function (options) {
-    console.log("click", options);
+    // console.log("click", options);
     if (
       options.target &&
       options.target.uuid &&
       options.target.uuid === config.drawingPoints[0].uuid
     ) {
       config.mode = "edit";
-      genetatePoly();
+      closePolygonPath();
     }
 
     if (config.mode === "draw") {
-      const circle = new fabric.Circle({
-        radius: 5 / canvas.getZoom(),
-        fill: "green",
-        left: options.pointer.x / canvas.getZoom(),
-        top: options.pointer.y / canvas.getZoom(),
-        originX: "center",
-        originY: "center",
-        selectable: false,
-        hasControls: false,
-        selectable: false,
-        uuid: uuid(),
-      });
+      const circle = createCircle(options.pointer.x, options.pointer.y);
       if (config.drawingPoints.length === 0) {
         circle.set({
           fill: "red",
@@ -196,41 +229,37 @@ function drawer({ width = 1000, height = 560 } = {}) {
           config.drawingPoints[length - 2].left,
           config.drawingPoints[length - 2].top,
         ];
-        const line = new fabric.Line(points, {
-          strokeWidth: 1,
-          fill: "#999999",
-          stroke: "#999999",
-          class: "line",
-          originX: "center",
-          originY: "center",
-          selectable: false,
-          // hasBorders: false,
-          hasControls: false,
-          evented: false,
-        });
+        const line = createLine(points);
         config.drawingLines.push(line);
         canvas.add(line);
       }
       canvas.add(circle);
-      // canvas.renderAll();
     }
-    // points.push(options.pointer);
-    // canvas.renderAll();
   });
 
-  canvas.on("mouse:move", function (options) {
-    // console.log("move", options);
+  // canvas.on("mouse:move", function (options) {
+  // console.log("move", options);
+  // });
+
+  canvas.on("mouse:over", function (e) {
+    if (!e.target) return;
+
+    if (e.target.type === "polygon") {
+      e.target.set("fill", colors.hover);
+      e.target.set("stroke", colors.hover);
+      canvas.renderAll();
+    }
   });
 
-  // canvas.on('mouse:over', function(e) {
-  //   e.target.set('fill', 'red');
-  //   canvas.renderAll();
-  // });
+  canvas.on("mouse:out", function (e) {
+    if (!e.target) return;
 
-  // canvas.on('mouse:out', function(e) {
-  //   e.target.set('fill', 'green');
-  //   canvas.renderAll();
-  // });
+    if (e.target.type === "polygon") {
+      e.target.set("fill", colors.main);
+      e.target.set("stroke", colors.main);
+      canvas.renderAll();
+    }
+  });
 
   // // define a function that can keep the polygon in the same position when we change its
   // // width/height/top/left.
@@ -310,10 +339,10 @@ function drawer({ width = 1000, height = 560 } = {}) {
 
   return {
     getData() {
-      const res = canvas.getObjects('polygon').map(item => (item.points))
+      const res = canvas.getObjects("polygon").map((item) => item.points);
       console.log(res);
-    }
-  }
+    },
+  };
 }
 
 export { drawer };

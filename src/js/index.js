@@ -11,7 +11,14 @@ file.addEventListener("change", function () {
     img.src = uploaded_image;
     img.addEventListener("load", () => {
       console.log({ width: img.clientWidth, height: img.clientHeight });
-      const draw = drawer({ width: img.clientWidth, height: img.clientHeight });
+      const draw = drawer({isAdmin: true});
+
+      document
+        .getElementById("get-data")
+        .addEventListener("click", function () {
+          draw.getData();
+        });
+      // const draw = drawer({ width: img.clientWidth, height: img.clientHeight });
       setTimeout(() => {
         draw.getData();
       }, 2000);
